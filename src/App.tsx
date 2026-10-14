@@ -15,6 +15,9 @@ import { PrivacyDashboardPage } from './pages/PrivacyDashboardPage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { dataService } from './lib/dataService';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { SplashScreen } from '@capacitor/splash-screen';
 import { Product, MockOrder } from './types';
 
 const AppContent: React.FC = () => {
@@ -44,6 +47,12 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     loadProducts();
+
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+      StatusBar.setBackgroundColor({ color: '#1e1b4b' }).catch(() => {});
+      SplashScreen.hide().catch(() => {});
+    }
   }, []);
 
   const handleOrderCompleted = (_order: MockOrder) => {
@@ -64,8 +73,8 @@ const AppContent: React.FC = () => {
         onOpenNoticeModal={() => setIsNoticeModalOpen(true)}
       />
 
-      {/* 3. Main View */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* 3. Main View with safe mobile bottom padding */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-24 md:pb-8">
         {currentView === 'store' && (
           <HomePage
             products={products}
