@@ -71,7 +71,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           ? localStorage.getItem(CURRENT_USER_STORAGE_KEY)
           : null;
 
-        if (storedUserId) {
+        if (storedUserId === 'guest') {
+          setUser(null);
+        } else if (storedUserId) {
           const profile = localStore.getUserById(storedUserId);
           if (profile) {
             setUser(profile);
@@ -84,7 +86,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
           }
         } else {
-          // Default to Alice
+          // Default to Alice on fresh first-time visit
           const alice = localStore.getUserById('usr-alice-101');
           setUser(alice);
           if (alice && typeof window !== 'undefined') {
@@ -210,7 +212,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     setUser(null);
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(CURRENT_USER_STORAGE_KEY);
+      localStorage.setItem(CURRENT_USER_STORAGE_KEY, 'guest');
     }
   };
 

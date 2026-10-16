@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ShieldCheck, Mail, Lock, User, Phone, CheckSquare, Sparkles } from 'lucide-react';
 import { Modal } from '../common/Modal';
+import { DataProtectionTermsModal } from './DataProtectionTermsModal';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 
@@ -17,6 +18,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [phone, setPhone] = useState('');
   const [essentialConsent, setEssentialConsent] = useState(true);
   const [marketingConsent, setMarketingConsent] = useState(false); // Unbundled default false
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const { login, register } = useAuth();
@@ -24,12 +27,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeSignIn = async () => {
     setLoading(true);
     try {
       await login(email, password);
-      success('Welcome Back', 'Logged in successfully.');
+      success('Welcome Back', 'Logged in securely. Your personal information is protected under DPDP Act 2023.');
       onClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -37,6 +39,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!termsAccepted) {
+      // Proactively ask for Data Protection Terms & Conditions!
+      setShowTermsModal(true);
+      return;
+    }
+    await executeSignIn();
+  };
+
+  const handleAcceptTermsAndProceed = async () => {
+    setTermsAccepted(true);
+    setShowTermsModal(false);
+    await executeSignIn();
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -169,12 +187,44 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               </div>
             </div>
 
+            {/* DATA PROTECTION TERMS & CONDITIONS (DPDP ACT 2023) */}
+            <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-emerald-950 font-bold">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Data Protection Terms (DPDP Act 2023)</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowTermsModal(true)}
+                  className="text-[10px] font-semibold text-emerald-700 hover:text-emerald-900 underline cursor-pointer"
+                >
+                  Review Protections
+                </button>
+              </div>
+              <p className="text-[11px] text-emerald-800 leading-relaxed">
+                Your personal info is protected under strict purpose limitation, zero third-party data selling, encrypted storage, and unconditional erasure rights.
+              </p>
+              <label className="flex items-start gap-2 cursor-pointer text-emerald-950 font-medium pt-0.5">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 text-emerald-600 rounded border-emerald-300 focus:ring-emerald-500"
+                />
+                <span className="text-[11px] leading-snug">
+                  I accept the <strong>Data Protection Terms & Conditions</strong> and acknowledge that my personal information is protected under India&apos;s DPDP Act, 2023.
+                </span>
+              </label>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
             >
-              {loading ? 'Authenticating...' : 'Sign In'}
+              <ShieldCheck className="w-4 h-4" />
+              <span>{loading ? 'Authenticating...' : termsAccepted ? 'Sign In Securely' : 'Review Terms & Sign In'}</span>
             </button>
           </form>
         ) : (
@@ -249,6 +299,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
             {/* MANDATORY DPDP SECTION 6(1) NOTICE */}
             <div className="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-indigo-950">Statutory Consent Notice (Sec 6(1))</span>
+                <button
+                  type="button"
+                  onClick={() => setShowTermsModal(true)}
+                  className="text-[10px] font-semibold text-indigo-700 hover:text-indigo-900 underline cursor-pointer"
+                >
+                  Review Protections
+                </button>
+              </div>
               <label className="flex items-start gap-2 cursor-pointer text-indigo-950 font-medium">
                 <input
                   type="checkbox"
@@ -257,8 +317,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   onChange={(e) => setEssentialConsent(e.target.checked)}
                   className="mt-0.5 w-4 h-4 text-indigo-600 rounded border-indigo-300"
                 />
-                <span>
-                  I consent to the processing of essential identity and order records required for shopping fulfillment under <strong>DPDP Act Section 6(1)</strong>.
+                <span className="text-[11px] leading-snug">
+                  I consent to the processing of essential identity and order records required for shopping fulfillment under <strong>DPDP Act Section 6(1)</strong> with full data protection safeguards.
                 </span>
               </label>
             </div>
@@ -294,6 +354,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         )}
 
       </div>
+
+      <DataProtectionTermsModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        onAccept={handleAcceptTermsAndProceed}
+        userEmail={email}
+        loading={loading}
+      />
     </Modal>
   );
 };
